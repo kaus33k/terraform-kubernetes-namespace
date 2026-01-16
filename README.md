@@ -1,6 +1,6 @@
 # Terraform Kubernetes Namespace Module
 
-A reusable Terraform module for creating and managing **Kubernetes namespaces** with support for **explicit names** or **auto-generated names**, along with configurable labels and annotations.
+A reusable Terraform module for creating and managing **Kubernetes namespaces** with support for **explicit names** or **auto-generated names**, along with configurable labels, annotations, and optional service account management.
 
 This module is designed to be **Terraform Registry–ready**, follows best practices, and includes strong input validation to prevent misconfiguration.
 
@@ -13,6 +13,10 @@ This module is designed to be **Terraform Registry–ready**, follows best pract
 
   * Explicit namespace names
   * Auto-generated namespace names using `generate_name`
+* Optional custom default service account creation
+* Support for image pull secrets and mountable secrets
+* Service account token generation (required for Kubernetes >=1.24)
+* Configurable delete timeouts
 * Strong variable validation for safe usage
 * Custom labels and annotations
 * Clean outputs for downstream modules
@@ -25,7 +29,7 @@ This module is designed to be **Terraform Registry–ready**, follows best pract
 | Name                | Version  |
 | ------------------- | -------- |
 | Terraform           | >= 1.3   |
-| Kubernetes Provider | >= 3.0.1 |
+| Kubernetes Provider | >= 3.0.0 |
 
 ---
 
@@ -40,7 +44,7 @@ terraform {
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 3.0.1"
+      version = ">= 3.0.0"
     }
   }
 }
@@ -54,8 +58,8 @@ terraform {
 
 ```hcl
 module "namespace" {
-  source  = "kaus33k/namespace/kubernetes"
-  version = "1.0.0"
+  source  = "tf-kubernetes-iaac/namespace/kubernetes"
+  version = "2.0.0"
 
   name = "frontend"
 
@@ -71,8 +75,8 @@ module "namespace" {
 
 ```hcl
 module "namespace" {
-  source  = "kaus33k/namespace/kubernetes"
-  version = "1.0.0"
+  source  = "tf-kubernetes-iaac/namespace/kubernetes"
+  version = "2.0.0"
 
   generate_name = true
   name_prefix   = "dev"
@@ -93,13 +97,19 @@ dev-abc123
 
 ## 🔐 Input Variables
 
-| Name            | Type          | Default | Description                                                            |
-| --------------- | ------------- | ------- | ---------------------------------------------------------------------- |
-| `name`          | `string`      | `""`    | Explicit name of the namespace. Leave empty if `generate_name = true`. |
-| `generate_name` | `bool`        | `false` | Generate a namespace name when `name` is not provided.                 |
-| `name_prefix`   | `string`      | `"dev"` | Prefix used when generating the namespace name.                        |
-| `labels`        | `map(string)` | `{}`    | Labels to apply to the namespace.                                      |
-| `annotations`   | `map(string)` | `{}`    | Annotations to apply to the namespace.                                 |
+| Name                                    | Type          | Default | Description                                                            |
+| --------------------------------------- | ------------- | ------- | ---------------------------------------------------------------------- |
+| `name`                                  | `string`      | `""`    | Explicit name of the namespace. Leave empty if `generate_name = true`. |
+| `generate_name`                         | `bool`        | `false` | Generate a namespace name when `name` is not provided.                 |
+| `name_prefix`                           | `string`      | `""`    | Prefix used when generating the namespace name.                        |
+| `labels`                                | `map(string)` | `{}`    | Labels to apply to the namespace.                                      |
+| `annotations`                           | `map(string)` | `{}`    | Annotations to apply to the namespace.                                 |
+| `delete_timeouts`                       | `string`      | `"5m"`  | Define the delete timeouts for the namespace.                          |
+| `create_custom_default_service_account` | `bool`        | `false` | Create custom default service account for the namespace.                |
+| `automount_service_account_token`       | `bool`        | `false` | Automatically mount the service account token in pods.                  |
+| `image_pull_secrets`                    | `list(string)`| `[]`    | List of image pull secrets for the service account.                    |
+| `mountable_secrets`                     | `list(string)`| `[]`    | List of secrets that can be mounted by pods.                           |
+| `create_token`                          | `bool`        | `false` | Create a service-account-token secret (required for K8s >=1.24).       |
 
 ---
 
@@ -136,6 +146,10 @@ See the [`examples`](./examples) directory for complete working examples:
 
 * **explicit-name** – Create a namespace with a fixed name
 * **generated-name** – Create a namespace using auto-generated naming
+* **with-service-account** – Create a namespace with custom service account configuration
+* **with-labels-and-annotations** – Create a namespace with comprehensive labeling and annotations
+* **with-image-pull-secrets** – Create a namespace with image pull secrets
+* **complete-configuration** – Complete example with all features enabled
 
 Each example includes its own `README.md` with usage instructions.
 
